@@ -1,0 +1,1 @@
+CLASSES = ["Normal", "Pneumonia", "COVID-19"]
