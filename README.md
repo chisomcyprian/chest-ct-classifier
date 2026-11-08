@@ -62,7 +62,8 @@ lesions, but others rely on the heart, spine or image edges.
 4. **Evaluation.** Sensitivity, specificity and AUC per class, person-level bootstrap CIs,
    a same-hospital (CNCB) check and a per-person score.
 
-The full exploration, including the first experiment, is in `notebooks/kaggle_training.ipynb`.
+The full exploration, including the first experiment, is in `notebooks/kaggle_training.ipynb`
+([view on Kaggle](https://www.kaggle.com/code/chisomcyprian/chest-ct-classifier-covidx-ct)).
 
 ## Running it
 
