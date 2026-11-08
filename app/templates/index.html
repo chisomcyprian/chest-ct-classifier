@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chest CT Classifier</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 680px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    .note { background: #fff4e5; border-left: 4px solid #e8a33d; padding: .6rem .8rem; font-size: .9rem; }
+    form { margin: 1.5rem 0; display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
+    button { background: #1f5fbf; color: #fff; border: 0; padding: .55rem 1.2rem; border-radius: 6px; cursor: pointer; }
+    button:disabled { opacity: .6; }
+    .bar { display: flex; align-items: center; gap: .5rem; margin: .35rem 0; }
+    .bar span:first-child { width: 90px; }
+    .track { flex: 1; background: #eee; height: 14px; border-radius: 7px; overflow: hidden; }
+    .fill { background: #1f5fbf; height: 100%; }
+    .imgs { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+    .imgs img { width: 300px; max-width: 100%; border-radius: 6px; }
+    .error { color: #b00020; }
+  </style>
+</head>
+<body>
+  <h1>Chest CT Classifier</h1>
+  <p>Upload an axial chest CT slice (PNG or JPG) to classify it as Normal, Pneumonia or COVID-19.</p>
+  <p class="note">{{ disclaimer }}</p>
+
+  <form id="form">
+    <input type="file" id="file" accept=".png,.jpg,.jpeg" required>
+    <label><input type="checkbox" id="explain" checked> Show Grad-CAM</label>
+    <button id="btn" type="submit">Classify</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById("form");
+    const out = document.getElementById("result");
+    const btn = document.getElementById("btn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("file").files[0];
+      const explain = document.getElementById("explain").checked;
+      const data = new FormData();
+      data.append("file", file);
+      btn.disabled = true;
+      out.textContent = "Running model...";
+      try {
+        const res = await fetch(`/predict?explain=${explain}`, { method: "POST", body: data });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error);
+        const bars = Object.entries(json.probabilities).map(([name, p]) =>
+          `<div class="bar"><span>${name}</span><div class="track"><div class="fill" style="width:${p * 100}%"></div></div><span>${(p * 100).toFixed(1)}%</span></div>`
+        ).join("");
+        const cam = json.gradcam_png
+          ? `<figure><img src="data:image/png;base64,${json.gradcam_png}" alt="Grad-CAM"><figcaption>Grad-CAM</figcaption></figure>` : "";
+        out.innerHTML = `<h2>${json.prediction} (${(json.confidence * 100).toFixed(1)}%)</h2>${bars}
+          <div class="imgs"><figure><img src="${URL.createObjectURL(file)}" alt="Upload"><figcaption>Input</figcaption></figure>${cam}</div>`;
+      } catch (err) {
+        out.innerHTML = `<p class="error">${err.message}</p>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
